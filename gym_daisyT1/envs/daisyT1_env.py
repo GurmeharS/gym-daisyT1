@@ -34,15 +34,15 @@ class DaisyT1Env(gym.Env):
       if self.data.radius[i] == -1:
         self.MAX_VEL_ARR[i] = self.MAX_VEL
       else:
-        if np.sqrt((self.data.radius[i]) * self.H / 1000000) > 20:
-            self.MAX_VEL_ARR[i] = 20
+        if np.sqrt((self.data.radius[i]) * self.H / 1000000) > MAX_VEL:
+            self.MAX_VEL_ARR[i] = MAX_VEL
         else:
             self.MAX_VEL_ARR[i] = (np.sqrt((self.data.radius[i]) * self.H / 1000000))
 
     self.currStep = -1
 
     # Action space (what can the agent control)
-    self.action_space = np.linspace(-1*self.MAX_ACC,self.MAX_ACC,2*self.MAX_ACC + 1)
+    self.action_space = np.linspace(-1*self.MAX_ACC,self.MAX_ACC,7) #last arg 2*self.MAX_ACC + 1
 
     # Observation space (what can the agent see)
     self.observation_space = self.data
