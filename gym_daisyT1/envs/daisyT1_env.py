@@ -36,7 +36,9 @@ class DaisyT1Env(gym.Env):
 
 
   def step(self, action):
-    ...
+    self.currStep+=1
+
+
   def reset(self):
     ...
   def render(self, mode='human', close=False):
