@@ -15,7 +15,7 @@ print("State size ",state_size)
 qtable = np.zeros((state_size,action_size))
 print(qtable)
 
-total_episodes = 50000 #total episodes
+total_episodes = 10 #total episodes
 total_test_episodes = 100 #total test episodes
 max_steps = 99 #max steps per episode
 
@@ -31,10 +31,10 @@ for episode in range(total_episodes):
     state = env.reset()
     step=0
     done=False
-    
+    print("line 34")
     for step in range(env.TOTAL_STEPS):
         exp_exp_tradeoff = random.uniform(0,1)
-        
+
         #exploitation
         if exp_exp_tradeoff > epsilon:
             action = np.argmax(qtable[state,:])

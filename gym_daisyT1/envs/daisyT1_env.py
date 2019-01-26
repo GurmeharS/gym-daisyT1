@@ -30,6 +30,7 @@ class DaisyT1Env(gym.Env):
     self.finishedState = False
     self.overMaxVel = False
     self.dt = 0
+    self.firstDT = True
 
     self.TOTAL_STEPS = len(self.data.radius)
     self.MAX_VEL_ARR = np.zeros((len(self.data), 1))
@@ -42,7 +43,7 @@ class DaisyT1Env(gym.Env):
         else:
             self.MAX_VEL_ARR[i] = (np.sqrt((self.data.radius[i]) * self.H / 1000000))
 
-    self.curr_step = -1
+    self.curr_step = 1
 
     # Action space (what can the agent control)
     self.action_space = np.array([])
@@ -53,7 +54,7 @@ class DaisyT1Env(gym.Env):
     self.observation_space = self.data
 
     # Store what agent tried
-    self.curr_ep = -1
+    self.curr_ep = 0
     self.memory = []
 
   def step(self, action):
@@ -85,7 +86,10 @@ class DaisyT1Env(gym.Env):
       self.overMaxVel = True
 
     if(action==0):
-      self.dt += 1/self.currVel
+      if (self.currVel == 0):
+        self.dt = 0
+      else:
+        self.dt += 1/self.currVel
     else:
       self.nextVel = np.sqrt(abs(self.currVel*self.currVel + 2*action*1))
       self.dt += (self.currVel + self.nextVel)/action
@@ -127,5 +131,8 @@ class DaisyT1Env(gym.Env):
       self.overMaxVel = False
       return (1/self.dt - 1)
     else:
+      if (self.currVel == 0):
+        self.firstDT = False
+        return -1
       return (1/self.dt)
 
