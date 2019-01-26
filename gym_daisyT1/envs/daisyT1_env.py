@@ -29,7 +29,10 @@ class DaisyT1Env(gym.Env):
       if self.data.radius[i] == -1:
         self.MAX_VEL_ARR[i] = self.MAX_VEL
       else:
-        self.MAX_VEL_ARR[i] = np.sqrt((self.data.radius[i]) * self.H / 1000000)
+        if np.sqrt((self.data.radius[i]) * self.H / 1000000) > 20:
+            self.MAX_VEL_ARR[i] = 20
+        else:
+            self.MAX_VEL_ARR[i] = (np.sqrt((self.data.radius[i]) * self.H / 1000000))
 
     self.currStep = -1
 
@@ -48,10 +51,9 @@ class DaisyT1Env(gym.Env):
 
   def reset(self):
     """
-    Rset environment state
+    Reset environment state
     :return:
     observation object: initial observation of the space
-
     """
     self.currStep = -1
     self.curr_ep += 1
