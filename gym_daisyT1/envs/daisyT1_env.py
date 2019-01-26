@@ -3,6 +3,8 @@ import csv
 import pandas as pd
 import numpy as np
 import math
+from gym.envs.toy_text import discrete
+from gym import spaces
 
 from gym import error, spaces, utils
 from gym.utils import seeding
@@ -14,7 +16,7 @@ class DaisyT1Env(gym.Env):
     self.__version__ = "0.1.0"
 
     # import dataframe of radii
-    self.data = pd.read_csv("/csv/track_1.csv")
+    self.data = pd.read_csv("/Users/gurmeharsandhu/PycharmProjects/gym-daisyT1/gym-daisyT1/gym_daisyT1/csv/track_1.csv")
 
     # General variables
     self.MAX_VEL = 30
@@ -27,22 +29,25 @@ class DaisyT1Env(gym.Env):
     self.nextVel = 0
     self.finishedState = False
     self.overMaxVel = False
+    self.dt = 0
 
     self.TOTAL_STEPS = len(self.data.radius)
-
+    self.MAX_VEL_ARR = np.zeros((len(self.data), 1))
     for i in range(0,len(self.data.radius)):
       if self.data.radius[i] == -1:
         self.MAX_VEL_ARR[i] = self.MAX_VEL
       else:
-        if np.sqrt((self.data.radius[i]) * self.H / 1000000) > MAX_VEL:
-            self.MAX_VEL_ARR[i] = MAX_VEL
+        if np.sqrt((self.data.radius[i]) * self.H / 1000000) > self.MAX_VEL:
+            self.MAX_VEL_ARR[i] = self.MAX_VEL
         else:
             self.MAX_VEL_ARR[i] = (np.sqrt((self.data.radius[i]) * self.H / 1000000))
 
-    self.currStep = -1
+    self.curr_step = -1
 
     # Action space (what can the agent control)
-    self.action_space = np.linspace(-1*self.MAX_ACC,self.MAX_ACC,7) #last arg 2*self.MAX_ACC + 1
+    self.action_space = np.array([])
+    #linspace = np.linspace(-1*self.MAX_ACC,self.MAX_ACC,7)
+    self.action_space = spaces.Discrete(2*self.MAX_ACC) #last arg 2*self.MAX_ACC + 1
 
     # Observation space (what can the agent see)
     self.observation_space = self.data
@@ -52,11 +57,12 @@ class DaisyT1Env(gym.Env):
     self.memory = []
 
   def step(self, action):
+    action -= self.MAX_ACC
     self.currStep += 1
     self.takeAction(action)
     curr_reward = self._get_reward()
     ob = self._get_state()
-    return ob, reward, self.finishedState, {}
+    return ob, curr_reward, self.finishedState, {}
 
   def takeAction(self,action):
     
@@ -79,10 +85,10 @@ class DaisyT1Env(gym.Env):
       self.overMaxVel = True
 
     if(action==0):
-      dt += 1/self.currVel
+      self.dt += 1/self.currVel
     else:
-      self.nextVel = np.sqrt(self.currVel*self.currVel + 2*action*1)
-      dt += (self.currVel + self.nextVel)/action
+      self.nextVel = np.sqrt(abs(self.currVel*self.currVel + 2*action*1))
+      self.dt += (self.currVel + self.nextVel)/action
 
     return True
 

@@ -7,9 +7,9 @@ import random
 env=gym.make('daisyT1-v0')
 env.render()
 
-action_size = env.action_space.n
+action_size = (env.action_space.n)
 print("Action size ",action_size)
-state_size = env.observation_space.n
+state_size = len(env.observation_space)
 print("State size ",state_size)
 
 qtable = np.zeros((state_size,action_size))
@@ -32,7 +32,7 @@ for episode in range(total_episodes):
     step=0
     done=False
     
-    for step in range(max_steps):
+    for step in range(env.TOTAL_STEPS):
         exp_exp_tradeoff = random.uniform(0,1)
         
         #exploitation
