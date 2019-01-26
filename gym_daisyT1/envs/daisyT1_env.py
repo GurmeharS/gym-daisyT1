@@ -22,6 +22,11 @@ class DaisyT1Env(gym.Env):
     self.H = 15
     self.gas = 1000
     self.tireDur = 1000
+    self.pitStop = False
+    self.currVel = 0
+    self.nextVel = 0
+    self.finishedState = False
+    self.overMaxVel = False
 
     self.TOTAL_STEPS = len(self.data.radius)
 
@@ -45,13 +50,51 @@ class DaisyT1Env(gym.Env):
 
   def step(self, action):
     self.currStep += 1
+    self.takeAction(action)
+    curr_reward = self._get_reward()
+    ob = self._get_state()
+    return ob, reward, self.finishedState, {}
+
+  def takeAction(self,action):
+    
+    if(action>0):
+      self.gas -= 0.1*(action*action)
+    elif(action<0):
+      self.tireDur -= 0.1*(action*action)
+    
+    if(self._get_state==0):
+      self.finishedState=True
+
+    if(self.pitStop):
+      action = self.MAX_ACC
+
+    if(self.gas==0 or self.tireDur==0):
+      action = self.takePitStop()
+
+    if((action + self.currVel)>self.MAX_VEL_ARR[self.currStep]):
+      self.currVel = self.MAX_VEL_ARR[self.currStep]
+      self.overMaxVel = True
+
+    if(action==0):
+      dt += 1/self.currVel
+    else:
+      self.nextVel = np.sqrt(self.currVel*self.currVel + 2*action*1)
+      dt += (self.currVel + self.nextVel)/action
+
+    return True
+
+  def takePitStop(self):
+    self.dt += 30
+    self.gas = 1000
+    self.tireDur = 1000
+    self.pitStop = True
+    return 0
 
   def reset(self):
     """
     Rset environment state
     :return:
     observation object: initial observation of the space
-
     """
     self.currStep = -1
     self.curr_ep += 1
@@ -68,7 +111,12 @@ class DaisyT1Env(gym.Env):
     return
 
   def _get_reward(self):
-    if self.pitStop:
+    if(self.pitStop):
+      self.pitStop = False
       return (1/self.dt - 2)        #Defined reward
+    elif(self.overMaxVel):          #Action takes us over the maximum velocity for the curve
+      self.overMaxVel = False
+      return (1/self.dt - 1)
     else:
       return (1/self.dt)
+
