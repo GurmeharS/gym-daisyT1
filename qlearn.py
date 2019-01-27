@@ -14,6 +14,7 @@ state_size = len(env.observation_space)
 print("State size ",state_size)
 
 qtable = np.zeros((state_size,action_size))
+#qtable[0,0]=10
 print(qtable)
 
 total_episodes = 1000 #total episodes
@@ -92,8 +93,9 @@ for episode in range(total_test_episodes):
             print('Score ', total_rewards)
             break
         state=new_state
+print(env.MAX_VEL_ARR)
 print(finalActions)
-df = pd.DataFrame(finalActions, columns=['Accelerations'])
-df.to_csv("instruction_1.csv", sep='\t')
+df = pd.DataFrame(finalActions, columns=['a'])
+df.to_csv("instructions_1.csv", sep='\t')
 env.close()
 print('Score over time: ' + str(sum(rewards)/total_test_episodes))

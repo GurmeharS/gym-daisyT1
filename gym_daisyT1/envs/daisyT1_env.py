@@ -34,6 +34,7 @@ class DaisyT1Env(gym.Env):
     self.dt = 0
     self.firstDT = True
     self.pCount = 0
+    self.initalA = True
 
     self.TOTAL_STEPS = len(self.data.radius)
     self.MAX_VEL_ARR = np.zeros((len(self.data), 1))
@@ -46,7 +47,7 @@ class DaisyT1Env(gym.Env):
         else:
             self.MAX_VEL_ARR[i] = (np.sqrt((self.data.radius[i]) * self.H / 1000000))
 
-    self.curr_step = -1
+    self.curr_step = -2
 
     # Action space (what can the agent control)
     self.action_space = np.array([])
@@ -70,7 +71,8 @@ class DaisyT1Env(gym.Env):
     return ob, curr_reward, self.finishedState, {}
 
   def takeAction(self,action):
-    
+    self.curr_action = action
+      #self.initalA = False
     if(action>0):
       self.gas -= 0.1*(action*action)
       #print(self.gas)
@@ -93,6 +95,7 @@ class DaisyT1Env(gym.Env):
       self.currVel = self.MAX_VEL_ARR[self.curr_step]
       self.overMaxVel = True
 
+    self.nextVel = np.sqrt(abs(self.currVel * self.currVel + 2 * action * 1))
     if(action==0):
       if (self.currVel == 0):
         self.dt = 0
@@ -102,11 +105,14 @@ class DaisyT1Env(gym.Env):
         else:
           self.dt += 1/self.currVel
     else:
-      self.nextVel = np.sqrt(abs(self.currVel * self.currVel + 2 * action * 1))
+
       if(self.pitStop):
         self.dt += (self.currVel + self.nextVel)/action
       else:
         self.dt = (self.currVel + self.nextVel)/action
+
+    #if self.dt < 0:
+    #  raise RuntimeError("dt < 0")
 
     global run
     run += 1
@@ -118,7 +124,7 @@ class DaisyT1Env(gym.Env):
         df.to_csv("output.csv", header=None, mode="a")
     print(action)
     """
-    self.nextVel = self.currVel
+    self.currVel = self.nextVel
     self.memory += [action]
     return True
 
@@ -135,7 +141,7 @@ class DaisyT1Env(gym.Env):
     :return:
     observation object: initial observation of the space
     """
-
+    self.initalA = False
     self.MAX_VEL = 30
     self.MAX_ACC = 20
     self.H = 15
@@ -151,7 +157,7 @@ class DaisyT1Env(gym.Env):
     self.pCount = 0
     self.memory = []
     #print(self.memory)
-    self.curr_step = -1
+    self.curr_step = -2
     self.curr_ep += 1
     #self.memory.append([])
 
@@ -166,15 +172,20 @@ class DaisyT1Env(gym.Env):
 
   def _get_reward(self):
     #print(self.dt)
+    if self.initalA:
+      if self.curr_action <= 0:
+        return -5
+    if (self.currVel * self.currVel + 2 * self.curr_action * 1) < 0:
+      return -5
     if(self.pitStop):
       #self.pitStop = False
       return (-1)        #Defined reward
     elif(self.overMaxVel):          #Action takes us over the maximum velocity for the curve
       self.overMaxVel = False
-      return (100/self.dt - 1000)
+      return (-5)
     else:
       if (self.currVel <= 0):
         self.firstDT = False
-        return -100
-      return (100/self.dt)
+        return -5
+      return (1/self.dt)
 
