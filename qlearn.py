@@ -16,7 +16,7 @@ print("State size ",state_size)
 qtable = np.zeros((state_size,action_size))
 print(qtable)
 
-total_episodes = 2000 #total episodes
+total_episodes = 1000 #total episodes
 total_test_episodes = 1 #total test episodes
 max_steps = env.TOTAL_STEPS #max steps per episode
 
@@ -61,7 +61,7 @@ for episode in range(total_episodes):
     #reduce epsilon to move towards exploitation
     epsilon = min_epsilon + (max_epsilon-min_epsilon)*np.exp(-decay_rate*episode)
 #print(env.memory)
-df = pd.DataFrame([env.memory], )
+
 #print(qtable)
 env.reset()
 rewards=[]
@@ -93,5 +93,7 @@ for episode in range(total_test_episodes):
             break
         state=new_state
 print(finalActions)
+df = pd.DataFrame(finalActions, columns=['Accelerations'])
+df.to_csv("instruction_1.csv", sep='\t')
 env.close()
 print('Score over time: ' + str(sum(rewards)/total_test_episodes))

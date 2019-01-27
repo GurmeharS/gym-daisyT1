@@ -171,10 +171,10 @@ class DaisyT1Env(gym.Env):
       return (-1)        #Defined reward
     elif(self.overMaxVel):          #Action takes us over the maximum velocity for the curve
       self.overMaxVel = False
-      return (100/self.dt - 1)
+      return (100/self.dt - 1000)
     else:
-      if (self.currVel == 0):
+      if (self.currVel <= 0):
         self.firstDT = False
-        return -1
+        return -100
       return (100/self.dt)
 
