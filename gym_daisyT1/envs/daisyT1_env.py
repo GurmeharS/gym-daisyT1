@@ -1,3 +1,4 @@
+#Main file for gym class
 import gym
 import csv
 import pandas as pd
@@ -18,7 +19,7 @@ class DaisyT1Env(gym.Env):
     self.__version__ = "0.1.0"
 
     # import dataframe of radii
-    self.data = pd.read_csv("/Users/gurmeharsandhu/PycharmProjects/gym-daisyT1/gym-daisyT1/gym_daisyT1/csv/track_1.csv")
+    self.data = pd.read_csv("/Users/Gurme/Desktop/gym-daisyT1/gym_daisyT1/csv/track_1.csv")
 
     # General variables
     self.MAX_VEL = 30
@@ -35,6 +36,7 @@ class DaisyT1Env(gym.Env):
     self.firstDT = True
     self.pCount = 0
     self.initalA = True
+    self.pitStopArr = []
 
     self.TOTAL_STEPS = len(self.data.radius)
     self.MAX_VEL_ARR = np.zeros((len(self.data), 1))
@@ -51,8 +53,8 @@ class DaisyT1Env(gym.Env):
 
     # Action space (what can the agent control)
     self.action_space = np.array([])
-    #linspace = np.linspace(-1*self.MAX_ACC,self.MAX_ACC,7)
-    self.action_space = spaces.Discrete(2*self.MAX_ACC) #last arg 2*self.MAX_ACC + 1
+
+    self.action_space = spaces.Discrete(2*self.MAX_ACC)
 
     # Observation space (what can the agent see)
     self.observation_space = self.data
@@ -62,7 +64,10 @@ class DaisyT1Env(gym.Env):
     self.memory = []
 
   def step(self, action):
-    action -= self.MAX_ACC
+    if self.initalA:
+      action = abs(action - self.MAX_ACC) 
+    else:
+      action -= self.MAX_ACC
     self.curr_step += 1
     self.takeAction(action)
     curr_reward = self._get_reward()
@@ -72,10 +77,9 @@ class DaisyT1Env(gym.Env):
 
   def takeAction(self,action):
     self.curr_action = action
-      #self.initalA = False
+    self.initalA = False
     if(action>0):
       self.gas -= 0.1*(action*action)
-      #print(self.gas)
     elif(action<0):
       self.tireDur -= 0.1*(action*action)
 
@@ -84,15 +88,15 @@ class DaisyT1Env(gym.Env):
 
     if(self.pitStop):
       action = self.MAX_ACC
+      self.pitStopArr += [1]
       self.pitStop = False
       self.pCount += 1
-
+    self.pitStopArr += [0]
 
     if(self.gas<=15 or self.tireDur<=15):
       action = self.takePitStop()
 
-    if((action + self.currVel)>self.MAX_VEL_ARR[self.curr_step]):
-      self.currVel = self.MAX_VEL_ARR[self.curr_step]
+    if((action + self.currVel) > self.MAX_VEL_ARR[self.curr_step]):
       self.overMaxVel = True
 
     self.nextVel = np.sqrt(abs(self.currVel * self.currVel + 2 * action * 1))
@@ -111,20 +115,9 @@ class DaisyT1Env(gym.Env):
       else:
         self.dt = (self.currVel + self.nextVel)/action
 
-    #if self.dt < 0:
-    #  raise RuntimeError("dt < 0")
 
-    global run
-    run += 1
-    """
-    df = pd.DataFrame([[run, action]], columns=["Iteration", "Acceleration"])
-    if run == 1:
-        df.to_csv("output.csv")
-    if run != 1:
-        df.to_csv("output.csv", header=None, mode="a")
-    print(action)
-    """
     self.currVel = self.nextVel
+    self.nextVel = np.sqrt(abs(self.currVel * self.currVel + 2 * action * 1))
     self.memory += [action]
     return True
 
@@ -141,7 +134,7 @@ class DaisyT1Env(gym.Env):
     :return:
     observation object: initial observation of the space
     """
-    self.initalA = False
+    self.initalA = True
     self.MAX_VEL = 30
     self.MAX_ACC = 20
     self.H = 15
@@ -156,10 +149,9 @@ class DaisyT1Env(gym.Env):
     self.firstDT = True
     self.pCount = 0
     self.memory = []
-    #print(self.memory)
+    self.pitStopArr = []
     self.curr_step = -2
     self.curr_ep += 1
-    #self.memory.append([])
 
     return self._get_state()
 
@@ -172,20 +164,21 @@ class DaisyT1Env(gym.Env):
 
   def _get_reward(self):
     #print(self.dt)
-    if self.initalA:
+    if self.initalA:  #Defined rewards
       if self.curr_action <= 0:
-        return -5
+        return -20
+    if self.MAX_VEL_ARR[self.curr_step+1] < self.nextVel:
+      return -3.3
     if (self.currVel * self.currVel + 2 * self.curr_action * 1) < 0:
-      return -5
+      return -3.3
     if(self.pitStop):
-      #self.pitStop = False
-      return (-1)        #Defined reward
+      return (-0.3)        
     elif(self.overMaxVel):          #Action takes us over the maximum velocity for the curve
       self.overMaxVel = False
-      return (-5)
+      return (-3)
     else:
       if (self.currVel <= 0):
         self.firstDT = False
         return -5
-      return (1/self.dt)
+      return (-self.dt)
 
